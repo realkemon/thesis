@@ -12,6 +12,8 @@
 
 ---
 
+<img src="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/logo-uni-blau.png" width="256"/> 
+
 ## Preamble
 
 This repository contains the Master's Thesis of my *'Information Systems'* M.Sc. degree programme. As part of that thesis, I built a framework in *'R'* that enables the automatic categorisation of any desired longitude/latitude locations based on their individual surrounding features in [OpenStreetMap](https://www.openstreetmap.org). In the thesis, the desired locations are charging stations for electric vehicles in Germany, France and Italy as provided by [Open Charge Map](https://openchargemap.org/site). The goal was to categorise these charging stations and compare them with the respective country's subsidy programme. In other words, check which categories of charging stations exist *(e.g. in residential areas, near motorways, etc.)*, investigate how they evolve over the years and compare that evolution with the timeframe of state subsidy programmes. This enables the drawing of conclusions regarding which category of charging stations are impacted by state subsidies and which categories evolve independently.<br>
