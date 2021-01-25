@@ -1,0 +1,1154 @@
+---
+title: "Framework"
+author: "Cedric Dean Easton"
+output:
+  pdf_document: default
+  html_document: 
+    keep_md: yes
+---
+
+# Setup
+In this section, we specify the working directory and create the necessary folder structure for the processes below. Furthermore, the 'feature_catalogue.R' file is added as an alternative source. It is done this way, because the contents of it are subject to ‘Creative Commons Attribution-Share Alike 2.0’ licence, as it is based on the Geofabrik documentation (http://download.geofabrik.de/osm-data-in-gis-formats-free.pdf). The outsourced functions are used to initiate the catalogue of all possible location classes that are extracted from the OSM database. By outsourcing them, the contents of this main framework file are protected from those copyright restrictions.
+```{r Working Directory}
+setwd("C:/Users/kemon/Desktop/Masterarbeit/Dataset/")     ## Set working directory for downloading datasets
+source("feature_catalogue.R")                             ## Import feature_catalogue.R as alternative source
+source("functions.R")                                     ## Import functions.R as alternative source
+dir.create("DE")
+dir.create("FR")
+dir.create("IT")
+dir.create("EU")
+```
+
+In this section, the necessary libraries are loaded. This will most likely cause errors for you as you might have to install them first. To install a library first call 'install.packages("NAME")' and then follow it up with 'library("NAME")' to load the library and enable the framework to run properly. NOTE: This has not been cleaned in a while. It is possible that not every library that is loaded is also required.
+```{r Libraries}
+library("R.utils")
+library("sf")           
+library("sp")         
+library("tidyverse")       
+library("tm")             
+library("fpc")          
+library("cluster")  
+library("topicmodels")
+library("tidytext")
+library("tidyr")
+library("ggplot2")
+library("ggmap")
+library("dplyr")
+library("stringr")
+library("rgeos")
+library("rmapshaper")
+library("ggspatial")
+library("units")
+library("gridExtra")
+library("corrplot")
+library("stats")
+library("dendextend")
+library("compareDF")
+library("data.table")
+library("Matrix")
+library("mltools")
+library("rnaturalearth")
+library("spatstat")
+library("jsonlite")
+library("textmineR")
+library("corrplot")
+library("Rtsne")
+library("irlba")
+library("scatterpie")
+library("ggridges")
+library("leaflet")
+library("rmarkdown")
+```
+
+# Feature Catalogue
+In this section the catalogue containing all feature classes is initiated from the outsourced 'feature_catalogue.R'
+```{r Initialisation}
+feature_catalogue                   <- FCLASS_initialise_catalogue()
+feature_groups                      <- FCLASS_initiate_groups()
+feature_catalogue                   <- add_column(feature_catalogue, "catalogue_index" = as.integer(rownames(feature_catalogue)))  ## Add incremental index column.
+feature_catalogue["long_name"]      <- FCLASS_create_long_names(feature_catalogue)
+feature_catalogue                   <- FCLASS_generalise_catalogue(feature_catalogue)
+
+write.csv(feature_catalogue,"feature_catalogue.csv")
+write.csv(feature_groups,"feature_groups.csv")
+```
+
+# OpenStreetMap
+This section retrieves all necessary OSM shapefile extracts from Geofabrik and prepares them for the rest of the framework.
+NOTE: This script will automatically initiate download calls to the internet and extract downloaded archives to your working directory! It does NOT ask for permission before the calls. If you do not agree with this, stop execution of this script here.
+
+## Data Import
+The imported OSM extracts are provided by Geofabrik. A full list of all available shapefiles can be found here: https://download.geofabrik.de/
+
+### Germany
+```{r Shape File Import}
+## Generate a list of all shape files for future reference. Initiated here.
+shapefile_list <- c()
+
+## If hard drive space is limited, change the last parameter from default 'FALSE' to 'TRUE' and the downloaded files will be removed after import.
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/baden-wuerttemberg-latest-free.shp.zip", "OSM_baden_wuerttemberg", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/bayern-latest-free.shp.zip", "OSM_bayern", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/berlin-latest-free.shp.zip", "OSM_berlin", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/brandenburg-latest-free.shp.zip", "OSM_brandenburg", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/bremen-latest-free.shp.zip", "OSM_bremen", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/hamburg-latest-free.shp.zip", "OSM_hamburg", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/hessen-latest-free.shp.zip", "OSM_hessen", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/mecklenburg-vorpommern-latest-free.shp.zip", "OSM_mecklenburg_vorpommern", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/niedersachsen-latest-free.shp.zip", "OSM_niedersachsen", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/nordrhein-westfalen-latest-free.shp.zip", "OSM_nordrhein_westfalen", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/rheinland-pfalz-latest-free.shp.zip", "OSM_rheinland_pfalz", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/saarland-latest-free.shp.zip", "OSM_saarland", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/sachsen-latest-free.shp.zip", "OSM_sachsen", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/sachsen-anhalt-latest-free.shp.zip", "OSM_sachsen_anhalt", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/schleswig-holstein-latest-free.shp.zip", "OSM_schleswig_holstein", FALSE)
+OSM_download_datasets("DE", "http://download.geofabrik.de/europe/germany/thueringen-latest-free.shp.zip", "OSM_thueringen", FALSE)
+```
+
+```{r Merge, Save-to-file and Remove Datasets from RAM}
+OSM_merge_datasets("DE","building")
+OSM_merge_datasets("DE","landuse")
+OSM_merge_datasets("DE","natural_1")
+OSM_merge_datasets("DE","natural_2")
+OSM_merge_datasets("DE","places_1")
+OSM_merge_datasets("DE","places_2")
+OSM_merge_datasets("DE","pofw_1")
+OSM_merge_datasets("DE","pofw_2")
+OSM_merge_datasets("DE","pois_1")
+OSM_merge_datasets("DE","pois_2")
+OSM_merge_datasets("DE","railways")
+OSM_merge_datasets("DE","roads")
+OSM_merge_datasets("DE","traffic_1")
+OSM_merge_datasets("DE","traffic_2")
+OSM_merge_datasets("DE","transport_1")
+OSM_merge_datasets("DE","transport_2")
+OSM_merge_datasets("DE","water")
+OSM_merge_datasets("DE","waterways")
+```
+
+### France
+```{r Shape File Import}
+## Generate a list of all shape files for future reference. Initiated here.
+shapefile_list <- c()
+
+## If hard drive space is limited, change the last parameter from default 'FALSE' to 'TRUE' and the downloaded files will be removed after import.
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/alsace-latest-free.shp.zip", "OSM_alsace", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/aquitaine-latest-free.shp.zip", "OSM_aquitaine", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/auvergne-latest-free.shp.zip", "OSM_auvergne", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/basse-normandie-latest-free.shp.zip", "OSM_basse_normandie", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/bourgogne-latest-free.shp.zip", "OSM_bourgogne", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/bretagne-latest-free.shp.zip", "OSM_bretagne", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/centre-latest-free.shp.zip", "OSM_centre", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/champagne-ardenne-latest-free.shp.zip", "OSM_champagne_ardenne", FALSE)
+# OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/corse-latest-free.shp.zip", "OSM_corse", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/franche-comte-latest-free.shp.zip", "OSM_franche_comte", FALSE)
+# OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/guadeloupe-latest-free.shp.zip", "OSM_guadeloupe", FALSE)
+# OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/guyane-latest-free.shp.zip", "OSM_guyane", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/haute-normandie-latest-free.shp.zip", "OSM_haute_normandie", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/ile-de-france-latest-free.shp.zip", "OSM_ile_de_france", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/languedoc-roussillon-latest-free.shp.zip", "OSM_languedoc_roussillon", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/limousin-latest-free.shp.zip", "OSM_limousin", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/lorraine-latest-free.shp.zip", "OSM_lorraine", FALSE)
+# OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/martinique-latest-free.shp.zip", "OSM_martinique", FALSE)
+# OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/mayotte-latest-free.shp.zip", "OSM_mayotte", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/midi-pyrenees-latest-free.shp.zip", "OSM_midi_pyrenees", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/nord-pas-de-calais-latest-free.shp.zip", "OSM_nord_pas_de_calais", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/pays-de-la-loire-latest-free.shp.zip", "OSM_pays_de_la_loire", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/picardie-latest-free.shp.zip", "OSM_picardie", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/poitou-charentes-latest-free.shp.zip", "OSM_poitou_charentes", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/provence-alpes-cote-d-azur-latest-free.shp.zip", "OSM_provence_alpes_cote_d_azur", FALSE)
+# OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/reunion-latest-free.shp.zip", "OSM_reunion", FALSE)
+OSM_download_datasets("FR", "http://download.geofabrik.de/europe/france/rhone-alpes-latest-free.shp.zip", "OSM_rhone_alpes", FALSE)
+```
+
+```{r Merge, Save-to-file and Remove Datasets from RAM}
+OSM_merge_datasets("FR","building")
+OSM_merge_datasets("FR","landuse")
+OSM_merge_datasets("FR","natural_1")
+OSM_merge_datasets("FR","natural_2")
+OSM_merge_datasets("FR","places_1")
+OSM_merge_datasets("FR","places_2")
+OSM_merge_datasets("FR","pofw_1")
+OSM_merge_datasets("FR","pofw_2")
+OSM_merge_datasets("FR","pois_1")
+OSM_merge_datasets("FR","pois_2")
+OSM_merge_datasets("FR","railways")
+OSM_merge_datasets("FR","roads")
+OSM_merge_datasets("FR","traffic_1")
+OSM_merge_datasets("FR","traffic_2")
+OSM_merge_datasets("FR","transport_1")
+OSM_merge_datasets("FR","transport_2")
+OSM_merge_datasets("FR","water")
+OSM_merge_datasets("FR","waterways")
+```
+
+### Italy
+```{r Shape File Import}
+## Generate a list of all shape files for future reference. Initiated here.
+shapefile_list <- c()
+
+## If hard drive space is limited, change the last parameter from default 'FALSE' to 'TRUE' and the downloaded files will be removed after import.
+OSM_download_datasets("IT", "http://download.geofabrik.de/europe/italy/centro-latest-free.shp.zip", "OSM_centro", FALSE)
+OSM_download_datasets("IT", "http://download.geofabrik.de/europe/italy/isole-latest-free.shp.zip", "OSM_isole", FALSE)
+OSM_download_datasets("IT", "http://download.geofabrik.de/europe/italy/nord-est-latest-free.shp.zip", "OSM_nord_est", FALSE)
+OSM_download_datasets("IT", "http://download.geofabrik.de/europe/italy/nord-ovest-latest-free.shp.zip", "OSM_nord_ovest", FALSE)
+OSM_download_datasets("IT", "http://download.geofabrik.de/europe/italy/sud-latest-free.shp.zip", "OSM_sud", FALSE)
+```
+
+```{r Merge, Save-to-file and Remove Datasets from RAM}
+OSM_merge_datasets("IT","building")
+OSM_merge_datasets("IT","landuse")
+OSM_merge_datasets("IT","natural_1")
+OSM_merge_datasets("IT","natural_2")
+OSM_merge_datasets("IT","places_1")
+OSM_merge_datasets("IT","places_2")
+OSM_merge_datasets("IT","pofw_1")
+OSM_merge_datasets("IT","pofw_2")
+OSM_merge_datasets("IT","pois_1")
+OSM_merge_datasets("IT","pois_2")
+OSM_merge_datasets("IT","railways")
+OSM_merge_datasets("IT","roads")
+OSM_merge_datasets("IT","traffic_1")
+OSM_merge_datasets("IT","traffic_2")
+OSM_merge_datasets("IT","transport_1")
+OSM_merge_datasets("IT","transport_2")
+OSM_merge_datasets("IT","water")
+OSM_merge_datasets("IT","waterways")
+
+rm(shapefile_list)
+```
+
+## Data Preparation
+In this section, the downloaded shapefiles are prepared by running them through various cleaning stages to stream-line the data and get it to a useable state for the subsequent processes. Console outputs are generated throughout this phase to provide feedback on the current status of the execution. Nonetheless, it is recommended to become familiar with the auxilliary functions in 'functions.R'.
+Note: This framework conducts semantic grouping of similar feature classes. These can be found in the 'feature_groups' dataframe. Semantic duplicates are removed from the datasets to reduce faulty conclusions. In its current state, however, the framework does not account for semantic duplicates across different shapefiles. In the 'Limitations' section further down in this file is an initial functionality attached, which counts the semantic duplicates across shapefiles. This functionality may provide an initial guidance in how to approach this, but requires adjustments to become fully functional.
+
+### Germany
+```{r Prepare individual Datasets}
+OSM_prepare_datasets("DE","building")
+OSM_prepare_datasets("DE","landuse")
+OSM_prepare_datasets("DE","natural_1")
+OSM_prepare_datasets("DE","natural_2")
+OSM_prepare_datasets("DE","places_1")
+OSM_prepare_datasets("DE","places_2")
+OSM_prepare_datasets("DE","pofw_1")
+OSM_prepare_datasets("DE","pofw_2")
+OSM_prepare_datasets("DE","pois_1")
+OSM_prepare_datasets("DE","pois_2")
+OSM_prepare_datasets("DE","railways")
+OSM_prepare_datasets("DE","roads")
+OSM_prepare_datasets("DE","traffic_1")
+OSM_prepare_datasets("DE","traffic_2")
+OSM_prepare_datasets("DE","transport_1")
+OSM_prepare_datasets("DE","transport_2")
+OSM_prepare_datasets("DE","water")
+OSM_prepare_datasets("DE","waterways")
+```
+
+```{r Find semantic duplicates across Datasets}
+## TODO Implement method to find semantic duplicates with same catalogue_index across multiple shapefiles
+```
+
+### France
+```{r Prepare individual Datasets}
+OSM_prepare_datasets("FR","building")
+OSM_prepare_datasets("FR","landuse")
+OSM_prepare_datasets("FR","natural_1")
+OSM_prepare_datasets("FR","natural_2")
+OSM_prepare_datasets("FR","places_1")
+OSM_prepare_datasets("FR","places_2")
+OSM_prepare_datasets("FR","pofw_1")
+OSM_prepare_datasets("FR","pofw_2")
+OSM_prepare_datasets("FR","pois_1")
+OSM_prepare_datasets("FR","pois_2")
+OSM_prepare_datasets("FR","railways")
+OSM_prepare_datasets("FR","roads")
+OSM_prepare_datasets("FR","traffic_1")
+OSM_prepare_datasets("FR","traffic_2")
+OSM_prepare_datasets("FR","transport_1")
+OSM_prepare_datasets("FR","transport_2")
+OSM_prepare_datasets("FR","water")
+OSM_prepare_datasets("FR","waterways")
+```
+
+```{r Find semantic duplicates across Datasets}
+## TODO Implement method to find semantic duplicates with same catalogue_index across multiple shapefiles
+```
+
+### Italy
+```{r Prepare individual Datasets}
+OSM_prepare_datasets("IT","building")
+OSM_prepare_datasets("IT","landuse")
+OSM_prepare_datasets("IT","natural_1")
+OSM_prepare_datasets("IT","natural_2")
+OSM_prepare_datasets("IT","places_1")
+OSM_prepare_datasets("IT","places_2")
+OSM_prepare_datasets("IT","pofw_1")
+OSM_prepare_datasets("IT","pofw_2")
+OSM_prepare_datasets("IT","pois_1")
+OSM_prepare_datasets("IT","pois_2")
+OSM_prepare_datasets("IT","railways")
+OSM_prepare_datasets("IT","roads")
+OSM_prepare_datasets("IT","traffic_1")
+OSM_prepare_datasets("IT","traffic_2")
+OSM_prepare_datasets("IT","transport_1")
+OSM_prepare_datasets("IT","transport_2")
+OSM_prepare_datasets("IT","water")
+OSM_prepare_datasets("IT","waterways")
+```
+
+```{r Find semantic duplicates across Datasets}
+## TODO Implement method to find semantic duplicates with same catalogue_index across multiple shapefiles
+```
+
+# Open Charge Map
+In this section, we import the Open Charge Map database as JSON from Github, extract the contents and import into this environment.
+```{r Data Import}
+## Database
+print("==========")
+print(sprintf("Downloading OCM database from Github. Starting at %s", Sys.time()))
+download.file("https://github.com/openchargemap/ocm-data/raw/master/poi.json.gz","OCM.json.gz")                   ## Download the JSON file directly from GitHub
+gunzip("OCM.json.gz", remove=FALSE)                                                                               ## Unzip the downloaded archive
+OCM_database <- stream_in(file("OCM.json"))                                                                       ## Import the JSON file
+
+## References
+print("==========")
+print(sprintf("Downloading OCM references from Github. Starting at %s", Sys.time()))
+download.file("https://github.com/openchargemap/ocm-data/raw/master/reference.json.gz","OCM_reference.json.gz")   ## Download the JSON file directly from GitHub
+gunzip("OCM_reference.json.gz", remove=FALSE)                                                                     ## Unzip the downloaded archive
+OCM_reference <- stream_in(file("OCM_reference.json"))                                                            ## Import the JSON file
+```
+
+In this section, the desired variables are extracted from nested dataframes from the JSON import and are moved to a separate dataframe.
+```{r Select desired data}
+print(sprintf("Subsetting OCM dataset. Starting at %s", Sys.time()))
+OCM <- data.frame("id" = OCM_database$ID,
+                  "title" = OCM_database$AddressInfo$Title,
+                  "address" = OCM_database$AddressInfo$AddressLine1,
+                  "town" = OCM_database$AddressInfo$Town,
+                  "ZIP" = OCM_database$AddressInfo$Postcode,
+                  "country" = OCM_database$AddressInfo$Country$ISOCode,
+                  "latitude" = OCM_database$AddressInfo$Latitude,
+                  "longitude" = OCM_database$AddressInfo$Longitude,
+                  "usage" = OCM_database$UsageTypeID,
+                  "NumberOfPoints" = OCM_database$NumberOfPoints,
+                  "connections" = c(NA),       ## Placeholder
+                  "chargers" = c(NA),          ## Placeholder
+                  "quantities" = c(NA),        ## Placeholder
+                  "sumOfQuantities" = c(NA),   ## Placeholder
+                  "status" = c(NA),            ## Placeholder
+                  "DateLastUpdate" = OCM_database$DateLastStatusUpdate,
+                  "DateCreated" = OCM_database$DateCreated)
+
+print(sprintf("Extracting desired references. Starting at %s", Sys.time()))
+REF_chargerType     <- OCM_reference$ChargerTypes[[1]]
+REF_connectionType  <- OCM_reference$ConnectionTypes[[1]]
+REF_usageType       <- OCM_reference$UsageTypes[[1]]
+REF_statusType      <- OCM_reference$StatusTypes[[1]]
+
+print(sprintf("Saving OCM references to file. Starting at %s", Sys.time()))
+write.csv(REF_chargerType,"REF_chargerType.csv")
+write.csv(REF_connectionType,"REF_connectionType.csv")
+write.csv(REF_usageType,"REF_usageType.csv")
+write.csv(REF_statusType,"REF_statusType.csv")
+```
+
+In this section, characteristic attributes are extracted and filled into the placeholder columns. First, by retrieving the respective id from the nested datarames. Then, by retrieving the corresponding humanly-readable title from the reference files.
+```{r Fill placeholder columns}
+print(sprintf("Filling placeholder columns. Starting at %s", Sys.time()))
+print(sprintf("## Extracting data as id. Starting at %s", Sys.time()))
+OCM$connections     <- lapply(seq_along(OCM_database$ID),function(i){OCM_database$Connections[[i]]$ConnectionTypeID})   ## Extract ConnectionType from nested sub-dataframe
+OCM$chargers        <- lapply(seq_along(OCM_database$ID),function(i){OCM_database$Connections[[i]]$LevelID})            ## Extract ChargerType from nested sub-dataframe
+OCM$status          <- lapply(seq_along(OCM_database$ID),function(i){OCM_database$Connections[[i]]$StatusTypeID})       ## Extract StatusType from nested sub-dataframe
+OCM$quantities      <- lapply(seq_along(OCM_database$ID),function(i){OCM_database$Connections[[i]]$Quantity})           ## Extract Charger Quantity from nested sub-dataframe
+OCM$sumOfQuantities <- lapply(seq_along(OCM_database$ID),function(i){sum(OCM_database$Connections[[i]]$Quantity, na.rm = TRUE)})  ## Calculate the sum of available connections. Ideally, equal to 'NumberOfPoints'.
+OCM$sumOfQuantities <- as.integer(as.character(OCM$sumOfQuantities))                                                    ## Convert to integer.
+## Note: The nested sub-dataframes don't follow consistent structures. Using non-universal columns (e.g. "OCM_database$Connections[[i]]$Level$Title") might yield this error: "$ operator is invalid for atomic vectors"
+
+print(sprintf("## Replacing id with corresponding humanly-readable references. Starting at %s", Sys.time()))
+print(sprintf("#### Connection types. Starting at %s", Sys.time()))
+OCM$connections <- lapply(seq_along(OCM$connections),function(i){                                                 ## Iterate through the dataframe column
+                      lapply(seq_along(OCM$connections[[i]]), function(j){                                        ## Iterate through the sublist in each dataframe row
+                        ifelse(is.na(OCM$connections[[i]][j]),NA,REF_connectionType$Title[as.integer(rownames(REF_connectionType[REF_connectionType$ID == OCM$connections[[i]][j],]))])})}) ## Find the rownumber of the ID that matches the dataframe value and retrieve the corresponding title.
+
+print(sprintf("#### Charger power levels. Starting at %s", Sys.time()))
+OCM$chargers    <- lapply(seq_along(OCM$chargers),function(i){                                                    ## Iterate through the dataframe column
+                      lapply(seq_along(OCM$chargers[[i]]), function(j){                                           ## Iterate through the sublist in each dataframe row
+                        ifelse(is.na(OCM$chargers[[i]][j]),NA,REF_chargerType$Title[OCM$chargers[[i]][j]])})})    ## Index matches ID, so corresponding title can be retrieved directly.
+
+print(sprintf("#### Operation status. Starting at %s", Sys.time()))
+OCM$status    <- lapply(seq_along(OCM$status),function(i){                                                        ## Iterate through the dataframe column
+                      lapply(seq_along(OCM$status[[i]]), function(j){                                             ## Iterate through the sublist in each dataframe row
+                        ifelse(is.na(OCM$status[[i]][j]),NA,REF_statusType$Title[as.integer(rownames(REF_statusType[REF_statusType$ID == OCM$status[[i]][j],]))])})}) ## Find the rownumber of the ID that matches the dataframe value and retrieve the corresponding title.
+
+print(sprintf("#### Usage types. Starting at %s", Sys.time()))
+OCM$usage     <- lapply(seq_along(OCM$usage),function(i){                                                         ## Iterate through the dataframe column
+                      lapply(seq_along(OCM$usage[[i]]), function(j){                                              ## Iterate through the sublist in each dataframe row
+                        ifelse(is.na(OCM$usage[[i]][j]),NA,REF_usageType$Title[as.integer(rownames(REF_usageType[REF_usageType$ID == OCM$usage[[i]][j],]))])})}) ## Find the rownumber of the ID that matches the dataframe value and retrieve the corresponding title.
+```
+
+In this section, the longitude/latitude information is used to generate SF geometries for further processing. By default they adhere to the WGS84 coordinate reference system.
+```{r Merge longitude and latitude to point geometries}
+print(sprintf("Generating point geometries for each CS. Starting at %s", Sys.time()))
+OCM$geometry <- lapply(seq_along(OCM$id),function(i){st_point(c(OCM$longitude[i],OCM$latitude[i]))})
+OCM$geometry <- st_sfc(OCM$geometry, crs = 4326)  ## Assign default World Geodetic System projection.
+```
+
+In this section, the dataset is stream-lined for further processing.
+```{r Remove Duplicates}
+print(sprintf("Removing duplicate observations. Starting at %s", Sys.time()))
+OCM <- OCM[-which(duplicated(OCM) == TRUE),]                                                      ## Remove duplicated rows.
+
+print(sprintf("Finding and removing duplicate CSs. Starting at %s", Sys.time()))
+OCM   <- arrange(OCM,desc(OCM$DateLastUpdate),desc(OCM$sumOfQuantities),desc(OCM$NumberOfPoints)) ## Sort dataframe by latest update, then number of connections, then number of points.
+match <- st_equals(OCM$geometry)                                                                  ## Find equal geometries.
+match <- lapply(match, function(temp) temp[-1])                                                   ## Because the list is ordered, the first element is the one that needs to be preserved.
+match <- as.vector(unique(unlist(match)))                                                         ## Get all unique indices that need to be removed due to being duplicates.
+OCM   <- OCM[-match,]                                                                             ## Remove all rows from the dataset whose indices remain in 'match'.
+```
+
+```{r Clean global environment}
+saveRDS(OCM, file = "OCM.RDS")
+rm(list = c("OCM_database","OCM_reference","REF_chargerType","REF_connectionType","REF_usageType","REF_statusType","match"))
+```
+
+In this section, the desired countries are selected by their ISO codes. The rownames are reset for a more intuitive control. Backwards compatibility is preserved in form of the ID variable.
+```{r Select desired countries and reset rownames}
+print(sprintf("Creating per-country datasets. Starting at %s", Sys.time()))
+OCM_DE <- OCM[which(OCM$country == "DE"),]                ## Select countries by their ISO code.
+OCM_FR <- OCM[which(OCM$country == "FR"),]                ## Select countries by their ISO code.
+OCM_IT <- OCM[which(OCM$country == "IT"),]                ## Select countries by their ISO code.
+OCM_EU <- OCM[which(OCM$country %in% c("DE","FR","IT")),] ## Select countries by their ISO code.
+
+print(sprintf("Reset rownames. Starting at %s", Sys.time()))
+rownames(OCM_DE) <- NULL  ## Reset rownames to incremental index. If corresponding rownames of the global database are required, use ID instead.
+rownames(OCM_FR) <- NULL  ## Reset rownames to incremental index. If corresponding rownames of the global database are required, use ID instead.
+rownames(OCM_IT) <- NULL  ## Reset rownames to incremental index. If corresponding rownames of the global database are required, use ID instead.
+rownames(OCM_EU) <- NULL  ## Reset rownames to incremental index. If corresponding rownames of the global database are required, use ID instead.
+```
+
+All cases are in Europe. For R to know how to draw the geometries on a flat map, the geometries need to be converted from WGS84 to a projected CRS. For this, the European Terrestrial Reference System is used.
+```{r Assign proper Coordinate Reference Systems}
+print(sprintf("Assigning European Terrestrial Reference System CRS. Starting at %s", Sys.time()))
+OCM_DE$geometry <- st_transform(OCM_DE$geometry, crs = 4839)  ## Assign European Terrestrial Reference System to ensure proper geometric calculations.
+OCM_FR$geometry <- st_transform(OCM_FR$geometry, crs = 4839)  ## Assign European Terrestrial Reference System to ensure proper geometric calculations.
+OCM_IT$geometry <- st_transform(OCM_IT$geometry, crs = 4839)  ## Assign European Terrestrial Reference System to ensure proper geometric calculations.
+OCM_EU$geometry <- st_transform(OCM_EU$geometry, crs = 4839)  ## Assign European Terrestrial Reference System to ensure proper geometric calculations.
+```
+
+# Matching
+In this section, the two datasets, OSM and OCM, are used to retrieve all locality features that are in the vicinity of each CS. For this, the framework first generates buffer zones, or 'walking distances' with 200m, 400m and 600m radius. Those buffer zones are then used to retrieve all locality features from the OSM dataset that intersect with them. If they do, they are within walking distance to the CS and are, therefore, considered for the matching.
+```{r Walking Distances}
+print(sprintf("Generating buffer zones/walking distances for each CS. Starting at %s", Sys.time()))
+print(sprintf("## Germany. Starting at %s", Sys.time()))
+OCM_DE["distance_200"] <- st_as_sf(st_buffer(OCM_DE$geometry,200))  ## maximum convenient walking distance
+OCM_DE["distance_400"] <- st_as_sf(st_buffer(OCM_DE$geometry,400))  ## maximum desirable walking distance
+OCM_DE["distance_600"] <- st_as_sf(st_buffer(OCM_DE$geometry,600))  ## maximum acceptable walking distance
+
+print(sprintf("## France. Starting at %s", Sys.time()))
+OCM_FR["distance_200"] <- st_as_sf(st_buffer(OCM_FR$geometry,200))  ## maximum convenient walking distance
+OCM_FR["distance_400"] <- st_as_sf(st_buffer(OCM_FR$geometry,400))  ## maximum desirable walking distance
+OCM_FR["distance_600"] <- st_as_sf(st_buffer(OCM_FR$geometry,600))  ## maximum acceptable walking distance
+
+print(sprintf("## Italy. Starting at %s", Sys.time()))
+OCM_IT["distance_200"] <- st_as_sf(st_buffer(OCM_IT$geometry,200))  ## maximum convenient walking distance
+OCM_IT["distance_400"] <- st_as_sf(st_buffer(OCM_IT$geometry,400))  ## maximum desirable walking distance
+OCM_IT["distance_600"] <- st_as_sf(st_buffer(OCM_IT$geometry,600))  ## maximum acceptable walking distance
+
+print(sprintf("## EU. Starting at %s", Sys.time()))
+OCM_EU["distance_200"] <- st_as_sf(st_buffer(OCM_EU$geometry,200))  ## maximum convenient walking distance
+OCM_EU["distance_400"] <- st_as_sf(st_buffer(OCM_EU$geometry,400))  ## maximum desirable walking distance
+OCM_EU["distance_600"] <- st_as_sf(st_buffer(OCM_EU$geometry,600))  ## maximum acceptable walking distance
+```
+
+```{r Save per-country datasets}
+saveRDS(OCM_DE, file = "DE/OCM.RDS")
+saveRDS(OCM_FR, file = "FR/OCM.RDS")
+saveRDS(OCM_IT, file = "IT/OCM.RDS")
+saveRDS(OCM_EU, file = "EU/OCM.RDS")
+
+rm(list = c("OCM","OCM_DE","OCM_FR","OCM_IT","OCM_EU"))
+```
+
+The actual matching is conducted here.
+```{r Matching}
+OSM_prepare_matching("DE")
+OSM_prepare_matching("FR")
+OSM_prepare_matching("IT")
+```
+
+In this section, the corss-country reference is compiled by concatenating all matches from the three individual countries.
+```{r Compile Europe}
+DE_matches <- readRDS("DE/matches.RDS")
+FR_matches <- readRDS("FR/matches.RDS")
+IT_matches <- readRDS("IT/matches.RDS")
+EU_matches <- rbind(DE_matches,FR_matches,IT_matches)
+saveRDS(EU_matches, file = "EU/matches.RDS")
+rm(list = c("DE_matches","FR_matches","IT_matches","EU_matches"))
+```
+
+# Analysis
+In this section, the analysis is prepared with the Latend Dirichlet Allocation.
+
+## Preparation
+The first step is to generate Document-Term-Matrices, which are required by the LDA to work.
+```{r Document Term Matrix}
+LDA_get_DTM("DE")
+LDA_get_DTM("FR")
+LDA_get_DTM("IT")
+LDA_get_DTM("EU")
+
+## Inspect Germany
+# View(as.matrix(DE_distance_200))
+# View(as.matrix(DE_distance_400))
+# View(as.matrix(DE_distance_600))
+
+## Inspect France
+# View(as.matrix(FR_distance_200))
+# View(as.matrix(FR_distance_400))
+# View(as.matrix(FR_distance_600))
+
+## Inspect Italy
+# View(as.matrix(IT_distance_200))
+# View(as.matrix(IT_distance_400))
+# View(as.matrix(IT_distance_600))
+
+## Inspect EU
+# View(as.matrix(EU_distance_200))
+# View(as.matrix(EU_distance_400))
+# View(as.matrix(EU_distance_600))
+```
+
+Second step is to remove 'empty' documents/charging stations.
+```{r Remove all charging stations from the DTM without any matches. Necessary to prevent error.}
+LDA_preparation("DE")
+LDA_preparation("FR")
+LDA_preparation("IT")
+LDA_preparation("EU")
+```
+
+In this section, the LDA is conducted with different numbers of categories to find the one best suitable to represent the given data. From start to finish, this section required 37h to compute on my local machine!
+```{r Generate LDA with different numbers of topics}
+print("==========")
+print(sprintf("Maximum convenient walking distance (200m). Starting at %s", Sys.time()))
+print("==========")
+LDA_number_of_topics("DE","distance_200")
+LDA_number_of_topics("FR","distance_200")
+LDA_number_of_topics("IT","distance_200")
+LDA_number_of_topics("EU","distance_200")
+
+print("==========")
+print(sprintf("Maximum desirable walking distance (400m). Starting at %s", Sys.time()))
+print("==========")
+LDA_number_of_topics("DE","distance_400")
+LDA_number_of_topics("FR","distance_400")
+LDA_number_of_topics("IT","distance_400")
+LDA_number_of_topics("EU","distance_400")
+
+print("==========")
+print(sprintf("Maximum acceptable walking distance (600m). Starting at %s", Sys.time()))
+print("==========")
+LDA_number_of_topics("DE","distance_600")
+LDA_number_of_topics("FR","distance_600")
+LDA_number_of_topics("IT","distance_600")
+LDA_number_of_topics("EU","distance_600")
+```
+
+## Plot log-likelihoods
+In this section, the log-likelihoods of all LDAs are plotted to find the one with the best fit for the given data.
+```{r Germany}
+ggplot(readRDS("DE/LDA_distance_200_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'red') +
+  geom_vline(xintercept = c(13), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("DE/DE_200_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot(readRDS("DE/LDA_distance_400_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'green') +
+  geom_vline(xintercept = c(12), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("DE/DE_400_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot(readRDS("DE/LDA_distance_600_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'blue') +
+  geom_vline(xintercept = c(13), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("DE/DE_600_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot() +
+  geom_line(data = readRDS("DE/LDA_distance_200_logLik.RDS"), aes(x=topics, y=LL, colour = "200m"), size=1) +
+  geom_line(data = readRDS("DE/LDA_distance_400_logLik.RDS"), aes(x=topics, y=LL, colour = "400m"), size=1) +
+  geom_line(data = readRDS("DE/LDA_distance_600_logLik.RDS"), aes(x=topics, y=LL, colour = "600m"), size=1) +
+  scale_colour_manual(name = "distances", 
+                      breaks = c("200m", "400m", "600m"),
+                      values = c("red", "green", "blue")) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(legend.key.size =  unit(0.45, "in"),
+        legend.text = element_text(size=16),
+        legend.title=element_text(size=16),
+        axis.text = element_text(size = 18),
+        axis.title = element_text(size = rel(2))) +
+  xlab("Number of topics") + ylab("Log likelihood of the models")
+ggsave("DE/DE_logLik.png",units="in", width=9, height=9, dpi=500)
+```
+
+```{r France}
+ggplot(readRDS("FR/LDA_distance_200_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'red') +
+  geom_vline(xintercept = c(9), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("FR/FR_200_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot(readRDS("FR/LDA_distance_400_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'green') +
+  geom_vline(xintercept = c(10), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("FR/FR_400_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot(readRDS("FR/LDA_distance_600_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'blue') +
+  geom_vline(xintercept = c(14), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("FR/FR_600_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot() +
+  geom_line(data = readRDS("FR/LDA_distance_200_logLik.RDS"), aes(x=topics, y=LL, colour = "200m"), size=1) +
+  geom_line(data = readRDS("FR/LDA_distance_400_logLik.RDS"), aes(x=topics, y=LL, colour = "400m"), size=1) +
+  geom_line(data = readRDS("FR/LDA_distance_600_logLik.RDS"), aes(x=topics, y=LL, colour = "600m"), size=1) +
+  scale_colour_manual(name = "distances", 
+                      breaks = c("200m", "400m", "600m"),
+                      values = c("red", "green", "blue")) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(legend.key.size =  unit(0.45, "in"),
+        legend.text = element_text(size=16),
+        legend.title=element_text(size=16),
+        axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2))) +
+  xlab("Number of topics") + ylab("Log likelihood of the models")
+ggsave("FR/FR_logLik.png",units="in", width=9, height=9, dpi=500)
+```
+
+```{r Italy}
+ggplot(readRDS("IT/LDA_distance_200_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'red') +
+  geom_vline(xintercept = c(10), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("IT/IT_200_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot(readRDS("IT/LDA_distance_400_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'green') +
+  geom_vline(xintercept = c(10), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("IT/IT_400_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot(readRDS("IT/LDA_distance_600_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") +
+  geom_line(size=2, color = 'blue') +
+  geom_vline(xintercept = c(10), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("IT/IT_600_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot() +
+  geom_line(data = readRDS("IT/LDA_distance_200_logLik.RDS"), aes(x=topics, y=LL, colour = "200m"), size=1) +
+  geom_line(data = readRDS("IT/LDA_distance_400_logLik.RDS"), aes(x=topics, y=LL, colour = "400m"), size=1) +
+  geom_line(data = readRDS("IT/LDA_distance_600_logLik.RDS"), aes(x=topics, y=LL, colour = "600m"), size=1) +
+  scale_colour_manual(name = "Walking distances", 
+                      breaks = c("200m", "400m", "600m"),
+                      values = c("red", "green", "blue")) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(legend.key.size =  unit(0.45, "in"),
+        legend.text = element_text(size=16),
+        legend.title=element_text(size=16),
+        axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2))) +
+  xlab("Number of topics") + ylab("Log likelihood of the models")
+ggsave("IT/IT_logLik.png",units="in", width=9, height=9, dpi=500)
+```
+
+```{r Europe}
+ggplot(readRDS("EU/LDA_distance_200_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'red') +
+  geom_vline(xintercept = c(13), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("EU/EU_200_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot(readRDS("EU/LDA_distance_400_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'green') +
+  geom_vline(xintercept = c(14), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("EU/EU_400_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot(readRDS("EU/LDA_distance_600_logLik.RDS"), aes(x=topics, y=LL)) + 
+  xlab("Number of topics") + ylab("Log likelihood of the model") + 
+  geom_line(size=2, color = 'blue') +
+  geom_vline(xintercept = c(17), size=1.5) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2)))
+ggsave("EU/EU_600_logLik.png",units="in", width=9, height=9, dpi=500)
+
+ggplot() +
+  geom_line(data = readRDS("EU/LDA_distance_200_logLik.RDS"), aes(x=topics, y=LL, colour = "200m"), size=1) +
+  geom_line(data = readRDS("EU/LDA_distance_400_logLik.RDS"), aes(x=topics, y=LL, colour = "400m"), size=1) +
+  geom_line(data = readRDS("EU/LDA_distance_600_logLik.RDS"), aes(x=topics, y=LL, colour = "600m"), size=1) +
+  scale_colour_manual(name = "Walking distances", 
+                      breaks = c("200m", "400m", "600m"),
+                      values = c("red", "green", "blue")) +
+  scale_x_continuous(breaks = seq(2, 25, by = 2)) +
+  theme(legend.key.size =  unit(0.45, "in"),
+        legend.text = element_text(size=16),
+        legend.title=element_text(size=16),
+        axis.text = element_text(size = 20),
+        axis.title = element_text(size = rel(2))) +
+  xlab("Number of topics") + ylab("Log likelihood of the models")
+ggsave("EU/EU_logLik.png",units="in", width=9, height=9, dpi=500)
+```
+
+## Extract appropriate LDA
+Once the appropriate number has been identified, the corresponding LDA is extracted.
+```{r Germany}
+LDA_finalise("DE",13,"200")
+LDA_finalise("DE",12,"400")
+LDA_finalise("DE",13,"600")
+```
+
+```{r France}
+LDA_finalise("FR",9,"200")
+LDA_finalise("FR",10,"400")
+LDA_finalise("FR",14,"600")
+```
+
+```{r Italy}
+LDA_finalise("IT",10,"200")
+LDA_finalise("IT",10,"400")
+LDA_finalise("IT",10,"600")
+```
+
+```{r Europe}
+LDA_finalise("EU",13,"200")
+LDA_finalise("EU",14,"400")
+LDA_finalise("EU",17,"600")
+```
+
+## Generate plots for analysis
+This sections computes all sorts of plots and graphs used for the analysis. This process takes several hours!
+```{r Germany}
+LDA_visualise("DE","200")
+LDA_visualise("DE","400")
+LDA_visualise("DE","600")
+```
+
+```{r France}
+LDA_visualise("FR","200")
+LDA_visualise("FR","400")
+LDA_visualise("FR","600")
+```
+
+```{r Italy}
+LDA_visualise("IT","200")
+LDA_visualise("IT","400")
+LDA_visualise("IT","600")
+```
+
+```{r Europe}
+LDA_visualise("EU","200")
+LDA_visualise("EU","400")
+LDA_visualise("EU","600")
+```
+
+## Compile information
+In this section, an overview table is compiled for each case to provide an overview of the raw data. Furthermore, various prints are generated to provide additional information regarding the researched cases.
+```{r Build final overviews}
+build_final_table("DE")
+build_final_table("FR")
+build_final_table("IT")
+build_final_table("EU")
+
+## Remove final tables from RAM
+# rm(list = c("DE_final_200","DE_final_400","DE_final_600"))
+# rm(list = c("FR_final_200","FR_final_400","FR_final_600"))
+# rm(list = c("IT_final_200","IT_final_400","IT_final_600"))
+# rm(list = c("EU_final_200","EU_final_400","EU_final_600"))
+```
+
+```{r Germany}
+DE <- readRDS("DE/OCM.RDS")
+print(sprintf("FACT: There are %s charging stations in Germany.",length(DE$id)))
+print(sprintf("FACT: Across these, there is a total of %s supply points.",sum(DE$NumberOfPoints,na.rm = TRUE)))
+print(sprintf("FACT: As well as a total of %s connections allowing simultaneous charging.",sum(DE$sumOfQuantities,na.rm = TRUE)))
+rm(DE)
+```
+
+```{r France}
+FR <- readRDS("FR/OCM.RDS")
+print(sprintf("FACT: There are %s charging stations in France",length(FR$id)))
+print(sprintf("FACT: Across these, there is a total of %s supply points.",sum(FR$NumberOfPoints,na.rm = TRUE)))
+print(sprintf("FACT: As well as a total of %s connections allowing simultaneous charging.",sum(FR$sumOfQuantities,na.rm = TRUE)))
+rm(FR)
+```
+
+```{r Italy}
+IT <- readRDS("IT/OCM.RDS")
+print(sprintf("FACT: There are %s charging stations in Italy",length(IT$id)))
+print(sprintf("FACT: Across these, there is a total of %s supply points.",sum(IT$NumberOfPoints,na.rm = TRUE)))
+print(sprintf("FACT: As well as a total of %s connections allowing simultaneous charging.",sum(IT$sumOfQuantities,na.rm = TRUE)))
+rm(IT)
+```
+
+```{r EU}
+EU <- readRDS("EU/OCM.RDS")
+print(sprintf("FACT: There are %s charging stations in Italy",length(EU$id)))
+print(sprintf("FACT: Across these, there is a total of %s supply points.",sum(EU$NumberOfPoints,na.rm = TRUE)))
+print(sprintf("FACT: As well as a total of %s connections allowing simultaneous charging.",sum(EU$sumOfQuantities,na.rm = TRUE)))
+rm(EU)
+```
+
+## Plot geometries on maps
+This section is capable to plot any of the OSM geometry on an interactive map. Plotting geometries helps immensly with understanding geographic manipulation and provides hands-on debugging options for investigating potential issues.
+```{r Investigate simplified geometries}
+## Import and retrieve the desired geometry
+OSM_pois_1 <- readRDS("DE/OSM_pois_1.RDS")
+plot(OSM_pois_1$geometry[38])
+
+## Derive centroid location of the plot
+centroid <- st_centroid(OSM_pois_1$geometry[38])
+centroid <- st_transform(centroid,4326)
+centroid <- st_coordinates(centroid)
+
+## Retrieve, simplify and transform polygons to WGS84
+shape <- OSM_pois_1$geometry[38]
+shape <- st_transform(shape,4326)
+shape_simplified <- st_simplify(OSM_pois_1$geometry[38], preserveTopology = TRUE, dTolerance = 75)
+shape_simplified <- st_transform(shape_simplified,4326)
+
+## Cast geometries to corner points to highlite the simplification effect
+points <- st_cast(shape, "POINT")
+points_simplified <- st_cast(shape_simplified, "POINT")
+
+
+## Create plot of original geometry
+original <- leaflet() %>% setView(lng = centroid[1], lat = centroid[2], zoom = 12)
+original %>% addProviderTiles(providers$OpenStreetMap) %>% addPolygons(data=shape) %>% addCircleMarkers(data = points, radius = 2, color = "black", fillOpacity = 1)
+## Create plot of simplified geometry
+simplified <- leaflet() %>% setView(lng = centroid[1], lat = centroid[2], zoom = 12)
+simplified %>% addProviderTiles(providers$OpenStreetMap) %>% addPolygons(data=shape_simplified) %>% addCircleMarkers(data = points_simplified, radius = 2, color = "black", fillOpacity = 1)
+```
+
+```{r Investigate point labels}
+## Import and retrieve the desired geometry
+OSM_places_1 <- readRDS("DE/OSM_places_1.RDS")
+OSM_places_2 <- readRDS("DE/OSM_places_2.RDS")
+OSM_places_1 <- OSM_places_1[which(OSM_places_1$fclass == "city"),]
+OSM_places_2 <- OSM_places_2[which(OSM_places_2$fclass == "city"),]
+
+match <- st_intersects(OSM_places_1$geometry,OSM_places_2$geometry) 
+
+ggplot() + 
+  geom_sf(data = OSM_places_1$geometry[5]) +
+  geom_sf(data = OSM_places_2$geometry[18])
+
+OSM_places_1$fclass[5]
+OSM_places_2$fclass[18]
+
+## Derive centroid location of the plot
+centroid <- st_centroid(OSM_places_1$geometry[5])
+centroid <- st_transform(centroid,4326)
+centroid <- st_coordinates(centroid)
+
+## Retrieve and transform polygons to WGS84
+shape <- OSM_places_1$geometry[5]
+shape <- st_transform(shape,4326)
+
+## Get label point
+points <- OSM_places_2$geometry[18]
+points <- st_transform(points,4326)
+
+
+## Create plot of polygon geometry
+original <- leaflet() %>% setView(lng = centroid[1], lat = centroid[2], zoom = 12)
+original %>% addProviderTiles(providers$OpenStreetMap) %>% addPolygons(data=shape)
+
+## Create plot of polygon geometry with label point
+original <- leaflet() %>% setView(lng = centroid[1], lat = centroid[2], zoom = 12)
+original %>% addProviderTiles(providers$OpenStreetMap) %>% addPolygons(data=shape) %>% addCircleMarkers(data = points)
+```
+
+```{r Investigate buffer zones}
+## Import and retrieve the desired geometry
+OCM <- readRDS("DE/OCM.RDS")
+plot(OCM$geometry[2202])
+plot(OCM$distance_200[2202])
+plot(OCM$distance_400[2202])
+plot(OCM$distance_600[2202])
+
+## Retrieve, simplify and transform polygons to WGS84
+cs          <- st_transform(OCM$geometry[2202],4326)
+buffer_200  <- st_transform(OCM$distance_200[2202],4326)
+buffer_400  <- st_transform(OCM$distance_400[2202],4326)
+buffer_600  <- st_transform(OCM$distance_600[2202],4326)
+
+## Create plot of original geometry
+original <- leaflet() %>% setView(lng = OCM$longitude[2202], lat = OCM$latitude[2202], zoom = 12)
+original %>% addProviderTiles(providers$OpenStreetMap) %>% addPolygons(data=buffer_200)  %>% addPolygons(data=buffer_400) %>% addPolygons(data=buffer_600) %>% addCircleMarkers(data = cs, radius = 2, color = "black", fillOpacity = 1)
+```
+
+```{r Investigate buffer zones}
+## Import and retrieve the desired geometry
+matches <- readRDS("DE/matches.RDS")
+categories <- readRDS("DE/distance_200.RDS")
+View(as.matrix(categories))
+```
+
+# Limitations
+This section attempts to provide information regarding the limitations of this framework. As mentioned, the semantic duplicates across shapefiles are attempted to be resolved here. Although they currently are only counted to provide initial insight into the magnitude of the limitation, the functionality might provide useful insights into future work.
+```{r Roads being dominant}
+#### Import datasets
+DE <- readRDS("DE/OSM_roads.RDS")
+FR <- readRDS("FR/OSM_roads.RDS")
+IT <- readRDS("IT/OSM_roads.RDS")
+
+#### Calculate mean length
+mean(st_length(DE$geometry))  ## 263.5106 [m]
+mean(st_length(FR$geometry))  ## 345.2324 [m]
+mean(st_length(IT$geometry))  ## 297.0669 [m]
+
+#### Count roads with a length of 50m or less
+length(DE$geometry[which(as.integer(st_length(DE$geometry)) <= 50)])  ## 1,085,027
+length(FR$geometry[which(as.integer(st_length(FR$geometry)) <= 50)])  ## 805,911
+length(IT$geometry[which(as.integer(st_length(IT$geometry)) <= 50)])  ## 573,659
+
+#### Percentage of roads with a length of 50m or less
+length(DE$geometry[which(as.integer(st_length(DE$geometry)) <= 50)]) / length(DE$geometry) ## 0.2373285
+length(FR$geometry[which(as.integer(st_length(FR$geometry)) <= 50)]) / length(FR$geometry) ## 0.213191
+length(IT$geometry[which(as.integer(st_length(IT$geometry)) <= 50)]) / length(IT$geometry) ## 0.2580676
+```
+
+```{r Number of CS between OCM and EAFO}
+#### Import datasets
+DE <- readRDS("DE/OCM.RDS")
+FR <- readRDS("FR/OCM.RDS")
+IT <- readRDS("IT/OCM.RDS")
+
+#### Amount of CS
+length(DE$id) ## 12,572
+length(FR$id) ## 8,383
+length(IT$id) ## 6,603
+
+DE$NumberOfPoints[which(is.na(DE$NumberOfPoints))] <- 1
+FR$NumberOfPoints[which(is.na(FR$NumberOfPoints))] <- 1
+IT$NumberOfPoints[which(is.na(IT$NumberOfPoints))] <- 1
+
+#### Number of supply points
+sum(DE$NumberOfPoints,na.rm = TRUE) ## 30,842
+sum(FR$NumberOfPoints,na.rm = TRUE) ## 10,110
+sum(IT$NumberOfPoints,na.rm = TRUE) ## 14,007
+
+#### Mean number of supply points
+mean(DE$NumberOfPoints,na.rm = TRUE) ## 2.453576
+mean(FR$NumberOfPoints,na.rm = TRUE) ## 1.930496
+mean(IT$NumberOfPoints,na.rm = TRUE) ## 2.121648
+
+#### Max number of supply points
+max(DE$NumberOfPoints,na.rm = TRUE) ## 100
+max(FR$NumberOfPoints,na.rm = TRUE) ## 33
+max(IT$NumberOfPoints,na.rm = TRUE) ## 37
+
+#### Plot with number of points for DE - 200m
+numberOfPoints <- data.frame("category" = rep(DE$category_200,DE$NumberOfPoints),
+                             "DateCreated" = rep(DE$DateCreated,DE$NumberOfPoints))
+
+ggplot(numberOfPoints, aes(x = format(as.Date(DateCreated, format="%d/%m/%Y"),"%Y"), fill = as.factor(category))) +
+                        geom_bar(colour="black") +
+                        scale_fill_manual(values=rainbow(12),name = "Topics") +
+                        theme_classic() +
+                        labs(x="Years",y="Number of CS")+
+                        ggtitle("Annual expansion based on number of supply points(DE - 200 m)")
+
+aggregated <- data.frame("category" = as.factor(numberOfPoints$category), "DateCreated" = format(as.Date(numberOfPoints$DateCreated, format="%d/%m/%Y"),"%Y"),"quantities" = 1)
+aggregated <- aggregate(quantities ~ DateCreated + category, data = aggregated, sum)
+aggregated <- add_column(aggregated, "cummulative" = NA)
+for (i in 1:length(unique(aggregated$category)))
+{
+  temp <- aggregated[which(aggregated$category == i),]
+  aggregated[which(aggregated$category == i),]$cummulative <- lapply(seq_along(temp$quantities), function(j){sum(temp$quantities[seq(0, j-1, by = 1)],temp$quantities[j])})
+}
+  ggplot(aggregated, aes(x = DateCreated, y = cummulative, fill = category, label = cummulative)) +
+                geom_bar(colour="black",stat = "identity") +
+                scale_fill_manual(values=rainbow(12),name = "Topics") +
+                theme_classic() +
+                labs(x="Years",y="Number of CS")+
+                ggtitle("Aggregated expansion based on number of supply points(DE - 200 m)")
+```
+
+```{r Find semantic duplicates across Datasets}
+OSM_building <- readRDS("DE/OSM_building.RDS")
+OSM_landuse <- readRDS("DE/OSM_landuse.RDS")
+OSM_natural_1 <- readRDS("DE/OSM_natural_1.RDS")
+OSM_natural_2 <- readRDS("DE/OSM_natural_2.RDS")
+OSM_places_1 <- readRDS("DE/OSM_places_1.RDS")
+OSM_places_2 <- readRDS("DE/OSM_places_2.RDS")
+OSM_pofw_1 <- readRDS("DE/OSM_pofw_1.RDS")
+OSM_pofw_2 <- readRDS("DE/OSM_pofw_2.RDS")
+OSM_pois_1 <- readRDS("DE/OSM_pois_1.RDS")
+OSM_pois_2 <- readRDS("DE/OSM_pois_2.RDS")
+OSM_railways <- readRDS("DE/OSM_railways.RDS")
+OSM_roads <- readRDS("DE/OSM_roads.RDS")
+OSM_traffic_1 <- readRDS("DE/OSM_traffic_1.RDS")
+OSM_traffic_2 <- readRDS("DE/OSM_traffic_2.RDS")
+OSM_transport_1 <- readRDS("DE/OSM_transport_1.RDS")
+OSM_transport_2 <- readRDS("DE/OSM_transport_2.RDS")
+OSM_water <- readRDS("DE/OSM_water.RDS")
+OSM_waterways <- readRDS("DE/OSM_waterways.RDS")
+
+shapefile_list <- c("OSM_building",
+                    "OSM_landuse",
+                    "OSM_natural_1",
+                    "OSM_natural_2",
+                    "OSM_places_1",
+                    "OSM_places_2",
+                    "OSM_pofw_1",
+                    "OSM_pofw_2",
+                    "OSM_pois_1",
+                    "OSM_pois_2",
+                    "OSM_railways",
+                    "OSM_roads",
+                    "OSM_traffic_1",
+                    "OSM_traffic_2",
+                    "OSM_transport_1",
+                    "OSM_transport_2",
+                    "OSM_water",
+                    "OSM_waterways")
+
+for (i in 1:length(shapefile_list)) ## iterate through the remaining shapefiles
+{
+  if(!is.empty(get(shapefile_list[i])$fclass))
+  {
+    assign(shapefile_list[i], add_column(get(shapefile_list[i]), "index" = seq(1, length(get(shapefile_list[i])$fclass), by = 1)), envir = .GlobalEnv)
+  }
+}
+
+counter_list <- c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+
+for (r in 1:length(feature_groups$index)) ## iterate through the list of semantic groups
+{
+  print(feature_groups$index[r])
+  result <- get(shapefile_list[1])[which(get(shapefile_list[1])$catalogue_index == feature_groups$index[r]),] ## create subset of first shapefile of all localities that match the current semantic group
+  result <- add_column(result, "shapefile" = shapefile_list[1]) ## store the first shapefile title for all observations and create incremental index
+
+  for (i in 2:length(shapefile_list)) ## iterate through the remaining shapefiles
+  {
+    temp <- get(shapefile_list[i])[which(get(shapefile_list[i])$catalogue_index == feature_groups$index[r]),] ## create subset of current shapefile of all localities that match the current semantic group
+    temp <- add_column(temp, "shapefile" = shapefile_list[i]) ## store the current shapefile title for all observations and create incremental index
+    result <- rbind(result, temp)  ## merge all subsets together to create one dataframe with all localities of the current semantic group from all shapefiles
+  }
+  
+  match <- st_equals(st_sfc(result$geometry))                     ## Match geometries against themselves to find duplicates.
+  match <- lapply(match, function(temp) temp[!length(temp) == 1]) ## Remove all sublists that only contain the geometry itself from the list.
+  match <- compact(match)                                         ## Remove empty list elements. Indices are preserved as each geometry is equal to itself.
+  remove_me <- lapply(seq_along(match), function(i){match[[i]][-1]})    ## Keep all but the first index.
+  remove_me <- as.vector(unique(unlist(remove_me)))                                                 ## Get all unique indices that need to be removed.
+  
+  if(!is.empty(remove_me))
+  {
+    for (i in 1:length(remove_me))  ## iterate through the list of unique indices that need to be removed
+    {
+      shapefile <- result$shapefile[remove_me[i]]                                                       ## safe shapefile title of to-be-removed index
+      index <- result$index[remove_me[i]]                                                               ## safe index number of to-be-removed index
+      counter_list[match(shapefile,shapefile_list)] = counter_list[match(shapefile,shapefile_list)] +1  ## increment shapefile counter to keep track of how many localities have been removed from each shapefile
+      
+      # dataset <- get(shapefile)
+      # assign(shapefile, dataset$catalogue_index[which(dataset$index == index)] <- NA, envir = .GlobalEnv)
+    }
+  }
+}
+
+total_sum <- 0
+for (i in 1:length(shapefile_list))
+{
+  total_sum <- total_sum + length(get(shapefile_list[i])$fclass)
+}
+total_sum
+View(counter_list)
+```
+
+## Random Forest Template
+In the past, a random forest implementation was planned to cross-check the framework results. These plans have been disregarded due to time. However, the generation of sample points, or 'dummy CS' remains functional below.
+```{r Generate Sample Points for Validation}
+REF_countries <- ne_countries(country = c("germany","france","italy"),returnclass='sf')   ## Import reference shapefiles for countries.
+REF_countries <- select(REF_countries,"ISO" = "iso_a2","geometry")                        ## Select desired columns.
+REF_countries$geometry <- st_transform(REF_countries$geometry,4839)                       ## Convert to proper CRS.
+REF_countries$geometry[2] <- st_cast(REF_countries$geometry[2],"POLYGON")[3]              ## France includes French Guiana [1], Corsica [2] and mainland France [3]. Break the MULTIPOLYGON into POLYGONS and select the third.
+
+## Create per-country polygons that exclude all buffered CS geometries. This step is important so that the randomly generated control locations are not within those buffer zones.
+Germany_without_CS <- st_difference(REF_countries$geometry[1], st_union(OCM_DE$distance_600)) ## Germany.
+France_without_CS  <- st_difference(REF_countries$geometry[2], st_union(OCM_FR$distance_600)) ## France.
+Italy_without_CS   <- st_difference(REF_countries$geometry[3], st_union(OCM_IT$distance_600)) ## Italy.
+
+## Create placeholder sataframe
+dummy_DE <- data.frame(geometry = numeric(length(OCM_DE$id)))
+dummy_FR <- data.frame(geometry = numeric(length(OCM_FR$id)))
+dummy_IT <- data.frame(geometry = numeric(length(OCM_IT$id)))
+
+## Create sample points that are not in the vicinity of any charging station.
+dummy_DE$geometry <- st_sample(Germany_without_CS, size = length(OCM_DE$id), exact = TRUE)
+dummy_FR$geometry <- st_sample(France_without_CS, size = length(OCM_FR$id), exact = TRUE)
+dummy_IT$geometry <- st_sample(Italy_without_CS, size = length(OCM_IT$id), exact = TRUE)
+
+## Buffer walking distances so the sample points adhere to the structure of the charging stations.
+dummy_DE["distance_200"]  <- st_as_sf(st_buffer(dummy_DE$geometry,200))  ## maximum convenient walking distance
+dummy_DE["distance_400"]  <- st_as_sf(st_buffer(dummy_DE$geometry,400))  ## maximum desirable walking distance
+dummy_DE["distance_600"]  <- st_as_sf(st_buffer(dummy_DE$geometry,600))  ## maximum acceptable walking distance
+
+dummy_FR["distance_200"]  <- st_as_sf(st_buffer(dummy_FR$geometry,200))  ## maximum convenient walking distance
+dummy_FR["distance_400"]  <- st_as_sf(st_buffer(dummy_FR$geometry,400))  ## maximum desirable walking distance
+dummy_FR["distance_600"]  <- st_as_sf(st_buffer(dummy_FR$geometry,600))  ## maximum acceptable walking distance
+
+dummy_IT["distance_200"]  <- st_as_sf(st_buffer(dummy_IT$geometry,200))  ## maximum convenient walking distance
+dummy_IT["distance_400"]  <- st_as_sf(st_buffer(dummy_IT$geometry,400))  ## maximum desirable walking distance
+dummy_IT["distance_600"]  <- st_as_sf(st_buffer(dummy_IT$geometry,600))  ## maximum acceptable walking distance
+
+rm(Germany_without_CS)
+rm(France_without_CS)
+rm(Italy_without_CS)
+
+## Manually double check whether any of the sampled points intersect with any of the CS locations.
+compact(st_intersects(dummy_DE$geometry ,OCM_DE$distance_600, sparse = TRUE, prepared = TRUE))   ## If this does not print an empty list, something went wrong.
+```
+
+```{r Save per-country dummy sets}
+saveRDS(dummy_DE, file = "DE/random_sample.RDS")
+saveRDS(dummy_FR, file = "FR/random_sample.RDS")
+saveRDS(dummy_IT, file = "IT/random_sample.RDS")
+
+rm(list = c("dummy_DE","dummy_FR","dummy_IT"))
+```
