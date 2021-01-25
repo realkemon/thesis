@@ -4,13 +4,13 @@
 <table>
   <tr>
     <td><b>Index:</b><br>
-      <a href="https://github.com/realkemon/thesis/blob/master/README.md">Home</a><br>
+      <a href="https://github.com/realkemon/thesis/blob/main/README.md">Home</a><br>
       <ul>
-        <li><a href="https://github.com/realkemon/thesis/blob/master/README.md#preamble">Preamble</a></li>
-        <li><a href="https://github.com/realkemon/thesis/blob/master/README.md#procedure">Procedure</a></li>
+        <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#preamble">Preamble</a></li>
+        <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#procedure">Procedure</a></li>
         <ul>
-          <li><a href="https://github.com/realkemon/thesis/blob/master/README.md#removing-undesired-localities">Removing undesired localities</a></li>
-          <li><a href="https://github.com/realkemon/thesis/blob/master/README.md#specifying-appropriate-CRS">Specifying appropriate CRS</a></li>
+          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#removing-undesired-localities">Removing undesired localities</a></li>
+          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#specifying-appropriate-CRS">Specifying appropriate CRS</a></li>
         </ul>
       </ul>
     </td>
