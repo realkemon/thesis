@@ -23,7 +23,7 @@ FCLASS_initialise_catalogue <- function()
     c("public","fire_station","A fire station",2),
     c("public","post_box","A post box (for letters)",NA), ## NO_TARGET
     c("public","post_office","A post office",0),
-    c("public","telephone","A public telephone booth",0), ## NO_TARGET
+    c("public","telephone","A public telephone booth",NA), ## NO_TARGET
     c("public","library","A library",0),
     c("public","town_hall","A town hall",0),
     c("public","courthouse","A court house",0),
