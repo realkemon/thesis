@@ -29,7 +29,7 @@ This framework is universally applicable and does not depend on the kind of loca
 The framework relies on [OpenStreetMap](https://www.openstreetmap.org) exports provided by [Geofabrik](http://download.geofabrik.de/) for the most comprehensive database of local features. Those exports are preferred, because they are provided in a uniform, consistent and well-structured manner and are pre-filtered to reduce noice. The datasets for Germany, France and Italy are downloaded automatically in the code and go through various cleaning and preparation stages.
 
 ### Removing undesired localities
-This step is based on the [feature catalogue](https://github.com/realkemon/thesis/blob/main/feature_catalogue.R) which, in turn, is based on [this documentation](http://download.geofabrik.de/osm-data-in-gis-formats-free.pdf) *(version 7 from 2019-05-21)*. This catalogue includes a **group** value for each possible locality. By default, all possible localities are in group: **0**. If a feature is undesired, it is specified as group: **NA**. This can be due to the following reasons:
+This step is based on the [feature catalogue](https://github.com/realkemon/thesis/blob/main/feature_catalogue.R) which, in turn, is based on [this documentation](http://download.geofabrik.de/osm-data-in-gis-formats-free.pdf) *(version 7 from 2019-05-21)*. This catalogue includes a **group** value for each possible locality. By default, all possible localities are in group: **0**. If a feature is undesired, it is specified as group: **NA** and subsequently dropped. This can be due to the following reasons:
 
 <table>
   <tr>
