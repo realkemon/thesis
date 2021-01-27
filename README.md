@@ -9,16 +9,11 @@
         <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#preamble">Preamble</a></li>
         <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#procedure">Procedure</a></li>
         <ul>
-<<<<<<< Updated upstream
-          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#removing-undesired-localities">Removing undesired localities</a></li>
-          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#specifying-appropriate-CRS">Specifying appropriate CRS</a></li>
-=======
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#1-removing-undesired-localities">1. Removing undesired localities</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#2-specifying-appropriate-CRS">2. Specifying appropriate CRS</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#3-simplifying geometries">3. Enforcing geometric validity</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#3-simplifying geometries">4. Simplifying geometries</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#4-removing-redundant-localities">5. Removing redundant localities</a></li>
->>>>>>> Stashed changes
         </ul>
       </ul>
     </td>
@@ -36,15 +31,10 @@ This framework is universally applicable and does not depend on the kind of loca
 ## Procedure
 The framework relies on [OpenStreetMap](https://www.openstreetmap.org) exports provided by [
 
-<<<<<<< Updated upstream
-### Removing undesired localities
-This step is based on the [feature catalogue](https://github.com/realkemon/thesis/blob/main/feature_catalogue.R) which, in turn, is based on [this documentation](http://download.geofabrik.de/osm-data-in-gis-formats-free.pdf) *(version 7 from 2019-05-21)*. This catalogue includes a **group** value for each possible locality. By default, all possible localities are in group: **0**. If a feature is undesired, it is specified as group: **NA** and subsequently dropped. This can be due to the following reasons:
-=======
 ](http://download.geofabrik.de/) for the most comprehensive database of local features. Those exports are preferred, because they are provided in a uniform, consistent and well-structured manner and are pre-filtered to reduce noice. The datasets for Germany, France and Italy are downloaded automatically in the code and go through various cleaning and preparation stages.
 
 ### 1. Removing undesired localities
 This stage is based on the [feature catalogue](https://github.com/realkemon/thesis/blob/main/feature_catalogue.R) which, in turn, is based on [this documentation](http://download.geofabrik.de/osm-data-in-gis-formats-free.pdf) *(version 7 from 2019-05-21)*. This catalogue contains all possible local features included in the [Geofabrik](http://download.geofabrik.de/) exports and further includes a **group** value for each possible local feature, which defaults to **0**. If a feature is undesired, it is specified as group: **NA** and subsequently dropped from the dataset. This can be due to the following reasons:
->>>>>>> Stashed changes
 
 <table>
   <tr>
@@ -70,9 +60,6 @@ This stage is based on the [feature catalogue](https://github.com/realkemon/thes
 </table>
 
 
-<<<<<<< Updated upstream
-### Specifying appropriate CRS
-=======
 > Other values for **group** can be possible for localities that are semantic duplicates like <i>'building_public'</i>, <i>'public_public_building'</i>, <i>'building_civic'</i>, <i>'building_government'</i>.
 
 ### 2. Specifying appropriate CRS
@@ -101,4 +88,3 @@ This stage relies on the semantic grouping, which was already hinted at in the f
 <a href="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/polygon_nolabel.png"><img align="left" src="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/polygon_nolabel.png" width="256"/></a>
 <a href="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/polygon_label.png"><img align="right" src="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/polygon_label.png" width="256"/></a>
 Another aspect is that [OpenStreetMap](https://www.openstreetmap.org) generates label points for polygon geometries at which the title is printed on the map. This is visible on the example of the city of Cottbus, Germany in the images to the side. Both the polygon shape and the label point are filed as a city in the [OpenStreetMap](https://www.openstreetmap.org) database, which leads the framework to assuming that a charging station in Cottbus is in the vicinity of two cities instead of one. Therefore, all point labels that intersect with a polygon geometry of the same class are considered to be label points and dropped from the dataset.
->>>>>>> Stashed changes
