@@ -13,7 +13,7 @@
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#2-specifying-appropriate-CRS">2. Specifying appropriate CRS</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#3-enforcing-geometric-validity">3. Enforcing geometric validity</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#4-simplifying-geometries">4. Simplifying geometries</a></li>
-          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#5-removing-redundant-localities">5. Removing redundant localities</a></li>
+          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#5-removing-redundant-geometries">5. Removing redundant geometries</a></li>
         </ul>
       </ul>
     </td>
