@@ -11,9 +11,9 @@
         <ul>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#1-removing-undesired-localities">1. Removing undesired localities</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#2-specifying-appropriate-CRS">2. Specifying appropriate CRS</a></li>
-          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#3-simplifying geometries">3. Enforcing geometric validity</a></li>
-          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#3-simplifying geometries">4. Simplifying geometries</a></li>
-          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#4-removing-redundant-localities">5. Removing redundant localities</a></li>
+          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#3-enforcing-geometric-validity">3. Enforcing geometric validity</a></li>
+          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#4-simplifying-geometries">4. Simplifying geometries</a></li>
+          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#5-removing-redundant-localities">5. Removing redundant localities</a></li>
         </ul>
       </ul>
     </td>
@@ -29,9 +29,7 @@ This repository contains the Master's Thesis of my *'Information Systems'* M.Sc.
 This framework is universally applicable and does not depend on the kind of locations you want to investigate. However, there was no time to build a UI for it, so it will require manual adjustments in the code. To simplify that, I provided the [thesis itself](https://github.com/realkemon/thesis/blob/main/Thesis.pdf) in this repository for an exhaustive explanation and will try to explain the procedure in general below.
 
 ## Procedure
-The framework relies on [OpenStreetMap](https://www.openstreetmap.org) exports provided by [
-
-](http://download.geofabrik.de/) for the most comprehensive database of local features. Those exports are preferred, because they are provided in a uniform, consistent and well-structured manner and are pre-filtered to reduce noice. The datasets for Germany, France and Italy are downloaded automatically in the code and go through various cleaning and preparation stages.
+The framework relies on [OpenStreetMap](https://www.openstreetmap.org) exports provided by [Geofabrik](http://download.geofabrik.de/) for the most comprehensive database of local features. Those exports are preferred, because they are provided in a uniform, consistent and well-structured manner and are pre-filtered to reduce noice. The datasets for Germany, France and Italy are downloaded automatically in the code and go through various cleaning and preparation stages.
 
 ### 1. Removing undesired localities
 This stage is based on the [feature catalogue](https://github.com/realkemon/thesis/blob/main/feature_catalogue.R) which, in turn, is based on [this documentation](http://download.geofabrik.de/osm-data-in-gis-formats-free.pdf) *(version 7 from 2019-05-21)*. This catalogue contains all possible local features included in the [Geofabrik](http://download.geofabrik.de/) exports and further includes a **group** value for each possible local feature, which defaults to **0**. If a feature is undesired, it is specified as group: **NA** and subsequently dropped from the dataset. This can be due to the following reasons:
