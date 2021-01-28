@@ -18,10 +18,6 @@
             <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#5-removing-redundant-geometries">5. Removing redundant geometries</a></li>
           </ul>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#preparing-locations-for-categorisation">Preparing locations for categorisation</a></li>
-          <ul>
-            <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#1-generating-point-geometries">1. Generating point geometries</a></li>
-            <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#2-creating-investigation-radius">2. Creating investigation radius</a></li>
-          </ul>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#categorising-locations">Categorising locations</a></li>
         </ul>
       </ul>
@@ -103,17 +99,8 @@ This stage relies on the semantic grouping, which was already hinted at in the f
 Another aspect is that [OpenStreetMap](https://www.openstreetmap.org) generates label points for polygon geometries at which the title is printed on the map. This is visible on the example of the city of Cottbus, Germany in the images to the side. Both the polygon shape and the label point are filed as a city in the [OpenStreetMap](https://www.openstreetmap.org) database, which leads the framework to assuming that a charging station in Cottbus is in the vicinity of two cities instead of one. Therefore, all point labels that intersect with a polygon geometry of the same class are considered to be label points and dropped from the dataset.
 
 ### Preparing locations for categorisation
-The thesis aims to categorise charging stations which are provided by [Open Charge Map](https://openchargemap.org/site) in a longitude and latitude format. As previously said, this framework will work with any kind of location set, but a reformatting is most likely necessary just as with the charging stations.
+The thesis aims to categorise charging stations which are provided by [Open Charge Map](https://openchargemap.org/site) in a longitude and latitude format. The first preparation stage is to generate valid [SF](https://r-spatial.github.io/sf/) point geometries from the longitude/latitude information, to ensure the same format as the locality feature geometries above. This includes assigning the same Coordinate Reference System, the <a href="https://epsg.io/4839">'European Terrestrial Reference System from 1989'</a> for mainland Europe.
 
-#### 1. Generating point geometries
-<a href="https://epsg.io/4839"><img align="left" src="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/EPSG4839.png" width="256"/></a>
-Based on the longitude and latitude data that is provided in the database, the first preparation stage is to generate valid [SF](https://r-spatial.github.io/sf/) point geometries in the same format as the locality feature geometries above. 
-
-To enable geographic calculations between the two datasets, it is crucial that both are assigned the same Coordinate Reference System. In the case of this thesis it is the <a href="https://epsg.io/4839">'European Terrestrial Reference System from 1989'</a> for mainland Europe.
-
-<br>
-
-#### 2. Creating investigation radius
 <a href="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/buffer_zones.png"><img align="left" src="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/buffer_zones.png" width="256"/></a>
 In terms of computation time, the most efficient way of retrieving all locality features in the vicinity of each charging station was found to create 'buffer zones'. These buffer zones are simply circular polygon geometries with a specified radius and the charging station in its centre. The image to the side shows this at the example of a charging station in Bamberg, Germany. To investigate the effect different radii have on the framework outcome, the entire process was conducted with three different radii around the charging stations: 200, 400 and 600 m, respectively.
 
