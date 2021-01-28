@@ -18,6 +18,7 @@
           </ul>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#preparing-locations-for-categorisation">Preparing locations for categorisation</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#categorising-locations">Categorising locations</a></li>
+          <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#visualising-location-categories">Visualising location categories</a></li>
         </ul>
       </ul>
     </td>
@@ -95,6 +96,9 @@ Another aspect is that [OpenStreetMap](https://www.openstreetmap.org) generates 
 The thesis aims to categorise charging stations which are provided by [Open Charge Map](https://openchargemap.org/site) in a longitude and latitude format. The first preparation stage is to generate valid [SF](https://r-spatial.github.io/sf/) point geometries from the longitude/latitude information, to ensure the same format as the locality feature geometries above. This includes assigning the same Coordinate Reference System, the <a href="https://epsg.io/4839">'European Terrestrial Reference System from 1989'</a> for mainland Europe.
 
 <a href="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/buffer_zones.png"><img align="left" src="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/buffer_zones.png" width="256"/></a>
-In terms of computation time, the most efficient way of retrieving all locality features in the vicinity of each charging station was found to create 'buffer zones'. These buffer zones are simply circular polygon geometries with a specified radius and the charging station in its centre. The image to the side shows this at the example of a charging station in Bamberg, Germany. To investigate the effect different radii have on the framework outcome, the entire process was conducted with three different radii around the charging stations: 200, 400 and 600 m, respectively.
+In terms of computation time, the most efficient way of retrieving all locality features in the vicinity of each charging station was found to be the creation of 'buffer zones'. These buffer zones are simply circular polygon geometries with a specified radius around the respective charging station. The image to the side shows this at the example of a charging station in Bamberg, Germany. To investigate the effect different radii have on the framework outcome, the entire process was conducted with three different radii around the charging stations: 200, 400 and 600 m, respectively.
 
 ## Categorising locations
+For a comprehensive explanation of how the categorisation is conducted, please refer to the [thesis itself](https://github.com/realkemon/thesis/blob/main/Thesis.pdf). Basically, for each charging station, the framework generates a list of which locality features from the [OpenStreetMap](https://www.openstreetmap.org) database intersect with the respective 'buffer zone'. It then takes a LDA-based topic modelling approach to generates abstract topics (categories) based on correlations between locality features. The framework does that iteratively for 2-25 categories and provides a log-likelihood graph to enable the manual selection of the most appropriate number of categories. Based on the list of locality features per category, the user can then assign a semantic interpretation manually.
+
+## Visualising location categories
