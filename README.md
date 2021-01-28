@@ -20,6 +20,7 @@
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#categorising-locations">Categorising locations</a></li>
           <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#visualising-location-categories">Visualising location categories</a></li>
         </ul>
+        <li><a href="https://github.com/realkemon/thesis/blob/main/README.md#epliogue">Epilogue</a></li>
       </ul>
     </td>
   </tr>
@@ -102,3 +103,14 @@ In terms of computation time, the most efficient way of retrieving all locality 
 For a comprehensive explanation of how the categorisation is conducted, please refer to the [thesis itself](https://github.com/realkemon/thesis/blob/main/Thesis.pdf). Basically, for each charging station, the framework generates a list of which locality features from the [OpenStreetMap](https://www.openstreetmap.org) database intersect with the respective 'buffer zone'. It then takes a LDA-based topic modelling approach to generates abstract topics (categories) based on correlations between locality features. The framework does that iteratively for 2-25 categories and provides a log-likelihood graph to enable the manual selection of the most appropriate number of categories. Based on the list of locality features per category, the user can then assign a semantic interpretation manually.
 
 ## Visualising location categories
+<a href="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/DE_200_scatterpie.png"><img align="left" src="https://raw.githubusercontent.com/realkemon/thesis/main/gfx/DE_200_scatterpie.png" width="256"/></a>
+For each country, the framework provides an exhaustive table of which categories have been generated along with their weighted importance as well as which locality features are part of each category, again along with the individual weighted importance. This is done so that the effect of individual features on each category as a whole and the prevalence of each category compared to others can be estimated.
+
+Furthermore, based on [this blog post](https://towardsdatascience.com/visualizing-topic-models-with-scatterpies-and-t-sne-f21f228f7b02) t-SNE scatterpie charts are compiled to provide a more intuitive and accessible representation of the exhaustive table above. In this chart, the relations between categories as well as the number of locations per category can be estimated.
+
+<br>
+
+---
+
+## Epilogue
+This was a very rough summary of what the created R framework does. You will notice that there are additional charts and graphs in the thesis, but these are mostly specific to the thesis' use case of categorising charging stations. This was the first time I properly worked with R, but I am quite pleased with the outcome. Naturally, there were additional plans to make the framework even more universally applicable with a possible UI and other measures of reducing the necessary manual import. If there is interest in this work in the future, then I might come back and continue work on it, but for now, this is a completed project. If there are any questions regarding functionality, licence or else, please don't hesitate to contact me via the email in my Github profile. Using the email stated on the thesis will no longer work, I'm afraid.
